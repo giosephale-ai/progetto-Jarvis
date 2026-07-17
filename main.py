@@ -12,10 +12,9 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="Jarvis OS", page_icon="🤖")
 st.title("🤖 Jarvis OS - Nucleo Attivo")
 
-# Sidebar
+# ... (parte sidebar invariata)
 if st.sidebar.button("🧠 Leggi Memoria"):
     st.sidebar.json(memoria.leggi_tutta_la_memoria())
-
 web_enabled = st.sidebar.checkbox("🌐 Abilita Ricerca Web", value=True)
 
 if "messages" not in st.session_state:
@@ -36,25 +35,21 @@ if prompt := st.chat_input("Comanda Jarvis..."):
             try:
                 final_prompt = prompt
                 
-                # Modifica Critica: Se il web è attivo, cerchiamo e iniettiamo il contesto
                 if web_enabled:
-                    with st.status("Jarvis sta interrogando il web...", expanded=False) as status:
-                        search_results = tools.cerca_sul_web(prompt)
-                        st.write("Dati acquisiti.")
-                        final_prompt = f"Informazioni dal web: {search_results}\n\nDomanda dell'utente: {prompt}"
-                        status.update(label="Ricerca completata", state="complete")
+                    results = tools.cerca_sul_web(prompt)
+                    if results:
+                        final_prompt = f"Informazioni dal web: {results}\n\nDomanda: {prompt}"
+                    else:
+                        st.info("Jarvis non ha trovato dati web recenti.")
 
                 contesto_memoria = memoria.leggi_tutta_la_memoria()
-                
-                # Sistema di identità puro
-                system_instruction = "Sei Jarvis. Rispondi con tono sarcastico, intelligente e professionale. Se hai informazioni dal web, usale per rispondere con precisione."
+                system_instruction = "Sei Jarvis. Rispondi con tono sarcastico, intelligente e professionale."
                 
                 response = client.models.generate_content(
                     model="models/gemma-4-26b-a4b-it",
-                    contents=final_prompt, # Ora passiamo i dati web qui dentro!
+                    contents=final_prompt,
                     config={"system_instruction": system_instruction}
                 )
-                
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
             except Exception as e:
