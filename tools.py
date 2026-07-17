@@ -5,12 +5,18 @@ class JarvisTools:
     
     @staticmethod
     def cerca_sul_web(query):
-        """Esegue una ricerca web veloce."""
+        """Esegue una ricerca web e stampa nel log i risultati trovati."""
+        print(f"DEBUG: Jarvis sta cercando: {query}") # Questo apparirà nei Log
         try:
             with DDGS() as ddgs:
+                # Proviamo a forzare una ricerca più semplice
                 results = list(ddgs.text(query, max_results=3))
+                print(f"DEBUG: Risultati grezzi ricevuti: {results}") # Questo apparirà nei Log
+                
                 if not results:
-                    return "Nessun risultato trovato."
+                    return None
+                
                 return "\n".join([f"- {r['title']}: {r['body']}" for r in results])
         except Exception as e:
-            return f"Errore durante la navigazione web: {e}"
+            print(f"DEBUG: ERRORE NELLA RICERCA: {e}")
+            return None
