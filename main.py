@@ -32,13 +32,25 @@ if prompt := st.chat_input("Comanda Jarvis..."):
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. Elabora con il "Cervello"
+    # 2. Recupero Memoria per il Contesto
+    contesto_memoria = memoria.leggi_tutta_la_memoria()
+    
+    # 3. Elabora con il "Cervello" + Identità Jarvis
     with st.chat_message("assistant"):
-        with st.spinner("Elaborazione in corso..."):
+        with st.spinner("Jarvis sta pensando..."):
             try:
+                # Definiamo chi è Jarvis
+                system_instruction = f"""
+                Sei Jarvis, un'IA avanzata creata da Giuseppe. 
+                Hai accesso a questa memoria (file JSON): {contesto_memoria}. 
+                Rispondi sempre come un assistente intelligente, sarcastico ma professionale. 
+                Se Giuseppe ti chiede cosa ricordi, consulta la memoria che ti ho fornito.
+                """
+                
                 response = client.models.generate_content(
                     model="models/gemma-4-26b-a4b-it",
-                    contents=prompt
+                    contents=prompt,
+                    config={"system_instruction": system_instruction}
                 )
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
