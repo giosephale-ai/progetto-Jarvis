@@ -1,9 +1,11 @@
 import streamlit as st
 from google import genai
 from memory import MemoryManager
+from tools import JarvisTools # Importiamo le nuove abilità
 
 # Inizializzazione
 memoria = MemoryManager()
+tools = JarvisTools() # Inizializziamo gli strumenti
 api_key = st.secrets["API_KEY"]
 client = genai.Client(api_key=api_key)
 
@@ -11,40 +13,41 @@ st.set_page_config(page_title="Jarvis OS", page_icon="🤖")
 
 st.title("🤖 Jarvis OS - Nucleo Attivo")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# Sidebar per memoria
+# Sidebar
 if st.sidebar.button("🧠 Leggi Memoria"):
     st.sidebar.json(memoria.leggi_tutta_la_memoria())
 
-# Mostra messaggi
+# Opzione per il Web
+st.sidebar.divider()
+web_enabled = st.sidebar.checkbox("🌐 Abilita Ricerca Web", value=False)
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Logica di Chat
 if prompt := st.chat_input("Comanda Jarvis..."):
-    # 1. Salva in memoria
     memoria.salva_ricordo("conversazione", prompt)
-    
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # 2. Recupero Memoria per il Contesto
-    contesto_memoria = memoria.leggi_tutta_la_memoria()
-    
-    # 3. Elabora con il "Cervello" + Identità Jarvis
     with st.chat_message("assistant"):
-        with st.spinner("Jarvis sta pensando..."):
+        with st.spinner("Jarvis sta analizzando..."):
             try:
-                # Definiamo chi è Jarvis
+                # Logica di ricerca opzionale
+                info_web = ""
+                if web_enabled:
+                    info_web = f"\n\nInformazioni trovate sul web: {tools.cerca_sul_web(prompt)}"
+
+                contesto_memoria = memoria.leggi_tutta_la_memoria()
+                
                 system_instruction = f"""
-                Sei Jarvis, un'IA avanzata creata da Giuseppe. 
-                Hai accesso a questa memoria (file JSON): {contesto_memoria}. 
-                Rispondi sempre come un assistente intelligente, sarcastico ma professionale. 
-                Se Giuseppe ti chiede cosa ricordi, consulta la memoria che ti ho fornito.
+                Sei Jarvis. Hai accesso alla memoria: {contesto_memoria}.
+                {info_web}
+                Rispondi basandoti sulle info web se presenti, altrimenti usa la tua conoscenza.
                 """
                 
                 response = client.models.generate_content(
