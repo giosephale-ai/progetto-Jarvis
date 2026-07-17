@@ -12,9 +12,10 @@ client = genai.Client(api_key=api_key)
 st.set_page_config(page_title="Jarvis OS", page_icon="🤖")
 st.title("🤖 Jarvis OS - Nucleo Attivo")
 
-# ... (parte sidebar invariata)
+# Sidebar
 if st.sidebar.button("🧠 Leggi Memoria"):
     st.sidebar.json(memoria.leggi_tutta_la_memoria())
+
 web_enabled = st.sidebar.checkbox("🌐 Abilita Ricerca Web", value=True)
 
 if "messages" not in st.session_state:
@@ -43,23 +44,25 @@ if prompt := st.chat_input("Comanda Jarvis..."):
                         st.info("Jarvis non ha trovato dati web recenti.")
 
                 contesto_memoria = memoria.leggi_tutta_la_memoria()
-               # Sostituisci la system_instruction attuale nel main.py con questa:
-system_instruction = """
-Sei Jarvis, assistente di Giuseppe. 
-Tono: sarcastico, intelligente, professionale.
+                
+                system_instruction = """
+                Sei Jarvis, assistente di Giuseppe. 
+                Tono: sarcastico, intelligente, professionale.
 
-REGOLE FERREE:
-1. Analizza i "Dati dal web" forniti nel contesto.
-2. Se i dati web sono vuoti, mancanti o non contengono la risposta specifica (es. meteo attuale), AMMETTI di non avere accesso a dati in tempo reale e NON INVENTARE numeri o situazioni. 
-3. Non rispondere mai con dati ipotetici se non sono presenti nel contesto fornito.
-"""
+                REGOLE FERREE:
+                1. Analizza i "Dati dal web" forniti nel contesto.
+                2. Se i dati web sono vuoti, mancanti o non contengono la risposta specifica, AMMETTI di non avere accesso a dati in tempo reale e NON INVENTARE numeri o situazioni. 
+                3. Non rispondere mai con dati ipotetici se non sono presenti nel contesto fornito.
+                """
                 
                 response = client.models.generate_content(
                     model="models/gemma-4-26b-a4b-it",
                     contents=final_prompt,
                     config={"system_instruction": system_instruction}
                 )
+                
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
+            
             except Exception as e:
                 st.error(f"Errore del Nucleo: {e}")
